@@ -2,7 +2,10 @@
 Command line interface.
 '''
 import argparse
+import signal
 from . import operation
+
+signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
 
 def parse_args():
