@@ -33,7 +33,7 @@ def get_output_fileobj(output, output_format):
         fd = open(output, 'wb')
     elif output and output_format == 'json':
         fd = open(output, 'w')
-    elif (not output) and output_format == 'json': 
+    elif (not output) and output_format == 'json':
         fd = sys.stdout
     else:
         fd = sys.stdout.buffer
@@ -50,11 +50,11 @@ def as_output_format(dict_obj, output_format):
         return bson.BSON.encode(dict_obj)
 
 
-def decode_json_file_iter(filename, *args, **kw):
+def decode_json_file_iter(fd, *args, **kw):
     '''
     Decode newline splitted json file.
     '''
-    for line in open(filename).readlines():
+    for line in fd.readlines():
         if not line:
             continue
         yield bson.json_util.loads(line, *args, **kw)
@@ -68,11 +68,14 @@ def query_son(filename, file_format=None, filters=None):
         filters = json.loads(filters)
     filters = filters or {}
     file_format = get_format(filename, format=file_format)
-    if file_format == 'bson':
+    if filename == '-':
+        for obj in query(decode_json_file_iter(sys.stdin), filters):
+            yield obj
+    elif file_format == 'bson':
         for obj in query(bson.decode_file_iter(open(filename, 'rb')), filters):
             yield obj
     elif file_format == 'json':
-        for obj in query(decode_json_file_iter(filename, filters)):
+        for obj in query(decode_json_file_iter(open(filename)), filters):
             yield obj
     else:
         raise Exception('Unknown file format "%s".' % file_format)
