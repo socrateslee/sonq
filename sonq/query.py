@@ -1,5 +1,7 @@
 '''
-Query dict or SON data with mongo style filters.
+Query dict or SON data objects with the style used in mongo shell,
+support most of the operators documented in
+https://docs.mongodb.com/manual/reference/operator/query/ .
 '''
 import bson
 
