@@ -16,6 +16,7 @@ def get_separated_attr(dict_obj, attr_name, separator='.'):
     parts = attr_name.split(separator)
     curr = dict_obj
     existed = False
+    parts_last_idx = len(parts) - 1
     for num, part in enumerate(parts):
         if curr is None:
             break
@@ -23,13 +24,13 @@ def get_separated_attr(dict_obj, attr_name, separator='.'):
             part = int(part)
             if part < len(curr):
                 curr = curr[part]
-                if num == len(parts) - 1:
+                if num == parts_last_idx:
                     existed = True
             else:
                 curr = None
         elif isinstance(curr, dict) and part in curr:
             curr = curr[part]
-            if num == len(parts) - 1:
+            if num == parts_last_idx:
                 existed = True
         else:
             curr = None
