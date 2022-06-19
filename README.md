@@ -1,6 +1,6 @@
 # sonq
 
-__sonq__ means son query, is tool for son like objects, for example, json and bson. You may use sonq to query .bson or newline separated .json files directly from command line.
+__sonq__ means son query, is a tool for querying son like objects, for example, JSON and BSON. You may use sonq to query .bson or newline separated .json files(JSON Lines) directly from the command line.
 
 
 ## Install
