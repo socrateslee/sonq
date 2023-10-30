@@ -1,3 +1,4 @@
+import gzip
 import sys
 import json
 import os
@@ -17,8 +18,12 @@ def get_format(filename, format=None):
         lower_filename = filename.lower()
         if lower_filename.endswith('.bson'):
             format = 'bson'
+        if lower_filename.endswith('.bson.gz'):
+            format = 'bson.gz'
         elif lower_filename.endswith('.json'):
             format = 'json'
+        elif lower_filename.endswith('.json.gz'):
+            format = 'json.gz'
         else:
             format = 'bson'
     return format
@@ -31,8 +36,12 @@ def get_output_fileobj(output, output_format):
     output_format = get_format(output, output_format)
     if output and output_format == 'bson':
         fd = open(output, 'wb')
+    elif output and output_format == 'bson.gz':
+        fd = gzip.open(output, 'wb')
     elif output and output_format == 'json':
         fd = open(output, 'w')
+    elif output and output_format == 'json.gz':
+        fd = gzip.open(output, 'w')
     elif (not output) and output_format == 'json':
         fd = sys.stdout
     else:
@@ -74,8 +83,14 @@ def query_son(filename, file_format=None, filters=None):
     elif file_format == 'bson':
         for obj in query(bson.decode_file_iter(open(filename, 'rb')), filters):
             yield obj
+    elif file_format == 'bson.gz':
+        for obj in query(bson.decode_file_iter(gzip.open(filename, 'rb')), filters):
+            yield obj
     elif file_format == 'json':
         for obj in query(decode_json_file_iter(open(filename)), filters):
+            yield obj
+    elif file_format == 'json.gz':
+        for obj in query(decode_json_file_iter(gzip.open(filename)), filters):
             yield obj
     else:
         raise Exception('Unknown file format "%s".' % file_format)
