@@ -7,23 +7,34 @@ import bson
 import bson.json_util
 from .query import query
 
+SUPPORTED_FORMATS = ('.bson', '.json', '.jsonl')
+SUPPORTED_COMPRESS_EXTS = ('.gz', '.bz2')
+
+
+def supported_suffix():
+    '''
+    Get the supported file suffixes.
+    '''
+    for format in SUPPORTED_FORMATS:
+        for compress_ext in ['', *SUPPORTED_COMPRESS_EXTS]:
+            yield format + compress_ext
+
 
 def get_format(filename, format=None):
     '''
     Get the file format from filename or provided format.
     '''
-    if format is not None:
+    suported = list(supported_suffix())
+    if format:
+        if format not in suported and ('.%s' % format) not in suported:
+            raise ValueError('Unsupported format: %s' % format)
         return format
     else:
         lower_filename = filename.lower()
-        if lower_filename.endswith('.bson'):
-            format = 'bson'
-        if lower_filename.endswith('.bson.gz'):
-            format = 'bson.gz'
-        elif lower_filename.endswith('.json'):
-            format = 'json'
-        elif lower_filename.endswith('.json.gz'):
-            format = 'json.gz'
+        for suffix in suported:
+            if lower_filename.endswith(suffix):
+                format = suffix[1:]
+                break
         else:
             format = 'bson'
     return format
@@ -33,28 +44,32 @@ def get_output_fileobj(output, output_format):
     '''
     Get output file object based on output filename and output_format.
     '''
-    output_format = get_format(output, output_format)
-    if output and output_format == 'bson':
-        fd = open(output, 'wb')
-    elif output and output_format == 'bson.gz':
-        fd = gzip.open(output, 'wb')
-    elif output and output_format == 'json':
-        fd = open(output, 'w')
-    elif output and output_format == 'json.gz':
-        fd = gzip.open(output, 'w')
-    elif (not output) and output_format == 'json':
+    file_format = get_format(output, output_format)
+    file_mode = 'wb' if file_format.startswith('bson') else 'w'
+    open_func = open
+    if file_format.endswith('.gz'):
+        import gzip
+        open_func = gzip.open
+    elif file_format.endswith('.bz2'):
+        import bz2
+        open_func = bz2.open
+    if output:
+        fd = open_func(output, file_mode)
+    elif output_format.startswith('json'):
         fd = sys.stdout
     else:
         fd = sys.stdout.buffer
     return fd
 
 
-def as_output_format(dict_obj, output_format):
+def as_output_format(dict_obj, output_format, json_options=None):
     '''
     Convert dict object to str or byte format w.r.t. output_format.
     '''
-    if output_format == 'json':
-        return '%s\n' % (bson.json_util.dumps(dict_obj))
+    if output_format.startswith('json'):
+        if json_options is None:
+            json_options = {}
+        return '%s\n' % (bson.json_util.dumps(dict_obj, **json_options))
     else:
         return bson.BSON.encode(dict_obj)
 
@@ -77,20 +92,19 @@ def query_son(filename, file_format=None, filters=None):
         filters = json.loads(filters)
     filters = filters or {}
     file_format = get_format(filename, format=file_format)
+    file_mode = 'rb' if file_format.startswith('bson') else None
+    open_func = open
+    if file_format.endswith('.gz'):
+        import gzip
+        open_func = gzip.open
+    elif file_format.endswith('.bz2'):
+        import bz2
+        open_func = bz2.open
     if filename == '-':
-        for obj in query(decode_json_file_iter(sys.stdin), filters):
-            yield obj
-    elif file_format == 'bson':
-        for obj in query(bson.decode_file_iter(open(filename, 'rb')), filters):
-            yield obj
-    elif file_format == 'bson.gz':
-        for obj in query(bson.decode_file_iter(gzip.open(filename, 'rb')), filters):
-            yield obj
-    elif file_format == 'json':
-        for obj in query(decode_json_file_iter(open(filename)), filters):
-            yield obj
-    elif file_format == 'json.gz':
-        for obj in query(decode_json_file_iter(gzip.open(filename)), filters):
-            yield obj
+        get_fd = lambda: sys.stdin
     else:
-        raise Exception('Unknown file format "%s".' % file_format)
+        get_fd = lambda: open_func(filename, file_mode) if file_mode else open_func(filename)
+    decode_iter = decode_json_file_iter if file_format.startswith('json') else bson.decode_file_iter
+    with get_fd() as fd:
+        for obj in query(decode_iter(fd), filters):
+            yield obj
