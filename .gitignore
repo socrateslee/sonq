@@ -39,3 +39,7 @@ venv
 
 # Other
 docs/_build/
+
+# Idea
+.idea
+*.iml
