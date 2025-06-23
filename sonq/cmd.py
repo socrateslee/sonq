@@ -5,7 +5,10 @@ import argparse
 import signal
 from . import operation
 
-signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+try:
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+except AttributeError:
+    pass
 
 SUPPORTED_FORMATS = [i[1:] for i in operation.supported_suffix()]
 
