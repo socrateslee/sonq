@@ -45,7 +45,7 @@ def get_output_fileobj(output, output_format):
     Get output file object based on output filename and output_format.
     '''
     file_format = get_format(output, output_format)
-    file_mode = 'wb' if file_format.startswith('bson') else 'w'
+    file_mode = 'wb' if file_format.startswith('bson') else 'wt'
     open_func = open
     if file_format.endswith('.gz'):
         import gzip
