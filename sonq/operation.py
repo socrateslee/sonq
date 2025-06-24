@@ -5,6 +5,7 @@ import os
 import functools
 import bson
 import bson.json_util
+import contextlib
 from .query import query
 
 SUPPORTED_FORMATS = ('.bson', '.json', '.jsonl')
@@ -36,7 +37,10 @@ def get_format(filename, format=None):
                 format = suffix[1:]
                 break
         else:
-            format = 'bson'
+            if filename == '-':
+                format = 'json'
+            else:
+                format = 'bson'
     return format
 
 
@@ -92,7 +96,7 @@ def query_son(filename, file_format=None, filters=None):
         filters = json.loads(filters)
     filters = filters or {}
     file_format = get_format(filename, format=file_format)
-    file_mode = 'rb' if file_format.startswith('bson') else None
+    file_mode = 'rb' if file_format.startswith('bson') else 'rt'
     open_func = open
     if file_format.endswith('.gz'):
         import gzip
@@ -101,10 +105,10 @@ def query_son(filename, file_format=None, filters=None):
         import bz2
         open_func = bz2.open
     if filename == '-':
-        get_fd = lambda: sys.stdin
+        get_fd = lambda: contextlib.nullcontext(sys.stdin)
     else:
-        get_fd = lambda: open_func(filename, file_mode) if file_mode else open_func(filename)
-    decode_iter = decode_json_file_iter if file_format.startswith('json') else bson.decode_file_iter
+        get_fd = lambda: open_func(filename, file_mode)
+    decode_iter = bson.decode_file_iter if file_format.startswith('bson') else decode_json_file_iter
     with get_fd() as fd:
         for obj in query(decode_iter(fd), filters):
             yield obj
