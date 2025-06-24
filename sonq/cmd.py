@@ -44,19 +44,26 @@ def parse_args():
 def main():
     args = vars(parse_args())
     options = args['options']
-    if not args['output']:
+    output = args['output']
+    if not output:
         output_format = args['output_format'] or 'json'
     else:
-        output_format = args['output_format'] or operation.get_format(args['output'])
+        output_format = args['output_format'] or operation.get_format(output)
     json_options = {k[5:]: v for k, v in args.items() if k.startswith('json_') and v is not None}
-    out_fd = operation.get_output_fileobj(args['output'], output_format)
     n = args['n']
+    class SafeDict(dict):
+        def __missing__(self, key):
+            return "unknown"
+    out_fd_dict = {}
     for idx, entry in enumerate(operation.query_son(options[0],
                                                     file_format=args['input_format'],
                                                     filters=args['filter'])):
         if n is not None and idx >= n:
             break
-        out_fd.write(operation.as_output_format(entry, output_format, json_options=json_options))
+        formatted_output = output.format_map(SafeDict(entry)) if output else None
+        if formatted_output not in out_fd_dict:
+            out_fd_dict[formatted_output] = operation.get_output_fileobj(formatted_output, output_format)
+        out_fd_dict[formatted_output].write(operation.as_output_format(entry, output_format, json_options=json_options))
 
 
 if __name__ == '__main__':
