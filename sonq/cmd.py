@@ -55,15 +55,20 @@ def main():
         def __missing__(self, key):
             return "unknown"
     out_fd_dict = {}
+    empty = True
     for idx, entry in enumerate(operation.query_son(options[0],
                                                     file_format=args['input_format'],
                                                     filters=args['filter'])):
         if n is not None and idx >= n:
             break
+        empty = False
         formatted_output = output.format_map(SafeDict(entry)) if output else None
         if formatted_output not in out_fd_dict:
             out_fd_dict[formatted_output] = operation.get_output_fileobj(formatted_output, output_format)
         out_fd_dict[formatted_output].write(operation.as_output_format(entry, output_format, json_options=json_options))
+    if empty:
+        formatted_output = output.format_map(SafeDict({})) if output else None
+        operation.get_output_fileobj(formatted_output, output_format)
 
 
 if __name__ == '__main__':
