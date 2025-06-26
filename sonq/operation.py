@@ -49,7 +49,6 @@ def get_output_fileobj(output, output_format):
     Get output file object based on output filename and output_format.
     '''
     file_format = get_format(output, output_format)
-    file_mode = 'wb' if file_format.startswith('bson') else 'wt'
     open_func = open
     if file_format.endswith('.gz'):
         import gzip
@@ -58,11 +57,14 @@ def get_output_fileobj(output, output_format):
         import bz2
         open_func = bz2.open
     if output:
-        fd = open_func(output, file_mode)
-    elif output_format.startswith('json'):
-        fd = sys.stdout
-    else:
+        if file_format.startswith('bson'):
+            fd = open_func(output, 'wb')
+        else:
+            fd = open_func(output, 'wt', encoding='utf-8', newline='\n')
+    elif output_format.startswith('bson'):
         fd = sys.stdout.buffer
+    else:
+        fd = sys.stdout
     return fd
 
 
@@ -70,12 +72,12 @@ def as_output_format(dict_obj, output_format, json_options=None):
     '''
     Convert dict object to str or byte format w.r.t. output_format.
     '''
-    if output_format.startswith('json'):
+    if output_format.startswith('bson'):
+        return bson.BSON.encode(dict_obj)
+    else:
         if json_options is None:
             json_options = {}
         return '%s\n' % (bson.json_util.dumps(dict_obj, **json_options))
-    else:
-        return bson.BSON.encode(dict_obj)
 
 
 def decode_json_file_iter(fd, *args, **kw):
