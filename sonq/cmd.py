@@ -68,9 +68,8 @@ def main():
             if formatted_output not in out_fd_dict:
                 out_fd_dict[formatted_output] = stack.enter_context(operation.get_output_fileobj(formatted_output, output_format))
             out_fd_dict[formatted_output].write(operation.as_output_format(entry, output_format, json_options=json_options))
-        if empty:
-            formatted_output = output.format_map(SafeDict({})) if output else None
-            stack.enter_context(operation.get_output_fileobj(formatted_output, output_format))
+        if empty and not ('{' in output and '}' in output):
+            stack.enter_context(operation.get_output_fileobj(output, output_format))
 
 
 if __name__ == '__main__':
