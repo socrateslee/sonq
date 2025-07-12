@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sonq"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["Chun Li"]
 description = "A query tool for SON like objects, for example, json/jsonl and bson."
 readme = "README.md"
