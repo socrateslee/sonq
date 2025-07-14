@@ -1,4 +1,6 @@
 *.py[cod]
+.cache
+.pytest_cache
 
 # C extensions
 *.so
@@ -36,9 +38,11 @@ nosetests.xml
 
 # Virtualenv
 venv
+.venv
 
 # Other
 docs/_build/
+debug
 
 # Idea
 .idea
