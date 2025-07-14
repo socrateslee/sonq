@@ -1,0 +1,9 @@
+site_name: sonq
+nav:
+  - index.md
+  - install.md
+  - tutorial.md
+  - cli.md
+  - filters.md
+theme: readthedocs
+
